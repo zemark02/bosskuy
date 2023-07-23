@@ -2,7 +2,16 @@ const prisma = require("../config/db");
 
 exports.getAllProducts = async (req, res, next) => {
   try {
-    const products = await prisma.product.findMany({});
+    const products = await prisma.product.findMany({
+      select: {
+        images: true,
+        category: true,
+        comments: true,
+        price: true,
+        product_name: true,
+        rating: true,
+      },
+    });
     res.status(200).send(products);
   } catch (err) {
     console.log(err.stack);
@@ -17,6 +26,16 @@ exports.getOneProduct = async (req, res, next) => {
     const product = await prisma.product.findFirst({
       where: {
         id,
+      },
+      select: {
+        images: true,
+        category: true,
+        comments: true,
+        description: true,
+        price: true,
+        product_name: true,
+        rating: true,
+        id: true,
       },
     });
 
@@ -113,6 +132,11 @@ exports.addComment = async (req, res, next) => {
         product_id: true,
       },
     });
+    const product = await prisma.product.findFirst({
+      where: {
+        id: data.product_id,
+      },
+    });
 
     if (!data || data.comment) {
       throw new Error("Invalid");
@@ -142,6 +166,22 @@ exports.addComment = async (req, res, next) => {
       },
       include: {
         comment: true,
+      },
+    });
+
+    const purchase_History = await prisma.comment.findMany({
+      where: {
+        product_id: product.id,
+      },
+    });
+    await prisma.product.update({
+      where: {
+        id: product.id,
+      },
+      data: {
+        rating:
+          (product.rating + purchaseHistory.length) /
+          (purchaseHistory.length + 1),
       },
     });
 
