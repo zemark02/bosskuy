@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  username         String             @unique
+  email            String             @unique
+  password         String
+  Cart             Cart?
+  purchase_history Purchase_History[]
+}
+
+model Cart {
+  id       Int            @id @default(autoincrement())
+  user_id  Int            @unique
+  user     User           @relation(fields: [user_id], references: [id])
+  products CartProducts[]
+}
+
+model CartProducts {
+  cart_id    Int
+  product_id Int
+  quantity   Int
+  userId     Int
+  cart       Cart    @relation(fields: [cart_id], references: [id])
+  product    Product @relation(fields: [product_id], references: [id])
+
+  @@id([cart_id, product_id])
+}
+
+model Product {
+  id               Int                @id @default(autoincrement())
+  product_name     String
+  category         String
+  price            Float
+  description      String             @db.LongText
+  rating           Float              @default(0)
+  created_at       DateTime           @default(now())
+  CartProducts     CartProducts[]
+  comments         Comment[]
+  images           Image[]
+  purchase_history Purchase_History[]
+}
+
+model Image {
+  id         Int     @id @default(autoincrement())
+  product_id Int
+  image_url  String  @db.LongText
+  product    Product @relation(fields: [product_id], references: [id])
+}
+
+model Comment {
+  id               Int              @id @default(autoincrement())
+  product_id       Int
+  created_at       DateTime         @default(now())
+  username         String
+  rating           Int              @default(5)
+  purchase_id      Int              @unique
+  description      String           @db.LongText
+  product          Product          @relation(fields: [product_id], references: [id])
+  purchase_history Purchase_History @relation(fields: [purchase_id], references: [id])
+}
+
+model Purchase_History {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  product_id Int
+  quantity   Int?
+  created_at DateTime @default(now())
+  comment    Comment?
+  user       User     @relation(fields: [user_id], references: [id])
+  product    Product  @relation(fields: [product_id], references: [id])
+}
